@@ -13,6 +13,6 @@
 
 # Credits
 ''SA2VoiceClipEditor'' relies on the following:
-[PuyoTools](https://github.com/nickworonekin/puyotools) by nickworonekin (AFS Extraction/Creation)
-[radx](https://github.com/Isaac-Lozano/radx) by Isaac-Lozano (ADX/AHX/WAV Conversion)
-[SonicAudioTools](https://github.com/blueskythlikesclouds/SonicAudioTools) by blueskythlikesclouds (CSB Extraction/Creation)
+- [PuyoTools](https://github.com/nickworonekin/puyotools) by nickworonekin (AFS Extraction/Creation)
+- [radx](https://github.com/Isaac-Lozano/radx) by Isaac-Lozano (ADX/AHX/WAV Conversion)
+- [SonicAudioTools](https://github.com/blueskythlikesclouds/SonicAudioTools) by blueskythlikesclouds (CSB Extraction/Creation)
