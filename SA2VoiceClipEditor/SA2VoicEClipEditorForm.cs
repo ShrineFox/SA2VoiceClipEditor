@@ -144,11 +144,26 @@ namespace SA2VoiceClipEditor
                 foreach (var file in Directory.GetFiles(extractedFilesPath, "*.adx", SearchOption.AllDirectories))
                 {
                     if (new FileInfo(file).Length > 60)
-                        File.Move(file, Path.Combine(extractedFilesPath, Path.GetFileName(Path.GetDirectoryName(file)) + ".adx"));
+                        File.Move(file, Path.Combine(extractedFilesPath, Path.GetFileName(Path.GetDirectoryName(file)).Replace("_wav","") + ".adx"));
+                    else
+                        File.Move(file, Path.Combine(extractedFilesPath, Path.GetFileName(Path.GetDirectoryName(file)).Replace("_wav", "") + "_silent.adx"));
                 }
                 Thread.Sleep(1000);
                 RecursiveDelete(new DirectoryInfo(extractedFilesPath));
                 lbl_Status.Text = "Done extracting CSB";
+                if (chkBox_Convert.Checked)
+                {
+                    lbl_Status.Text = "Converting ADX to WAV...";
+                    foreach (var adx in Directory.GetFiles(extractedFilesPath, "*.adx"))
+                    {
+                        RunCMD($"radx_decode.exe \"{adx}\" \"{adx.Replace(".adx", ".wav")}\"");
+                        using (WaitForFile(adx.Replace(".adx", ".wav"), FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
+                        foreach (var process in Process.GetProcessesByName("cmd"))
+                            process.Kill();
+                        File.Delete(adx);
+                    }
+                    lbl_Status.Text = "Done Converting ADX";
+                }
             }
         }
 
@@ -169,7 +184,39 @@ namespace SA2VoiceClipEditor
 
         private void RepackCSB_DragDrop(object sender, DragEventArgs e)
         {
+            var data = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            if (Directory.Exists(data[0]))
+            {
+                //Recreate folder structure
+                extractedFilesPath = data[0];
+                List<string> files = Directory.GetFiles(extractedFilesPath, "*", SearchOption.AllDirectories).ToList();
+                string newPath = Path.Combine(Path.Combine(extractedFilesPath, "Synth"), Path.GetFileNameWithoutExtension(files[0]).Substring(0, Path.GetFileNameWithoutExtension(files[0]).Length - 6));
+                Directory.CreateDirectory(Path.GetDirectoryName(newPath));
+                Directory.CreateDirectory(newPath);
+                foreach (var file in Directory.GetFiles(extractedFilesPath, "*", SearchOption.AllDirectories))
+                {
+                    //Create new folder in Synth folder named after each wav
+                    string newFolder = Path.Combine(newPath, Path.GetFileNameWithoutExtension(file)).Replace("_silent", "") + "_wav";
+                    Directory.CreateDirectory(newFolder);
+                    if (Path.GetExtension(file) == ".wav")
+                    {
+                        //Convert WAV to ADX
+                        RunCMD($"radx_encode.exe -n \"{file}\" \"{Path.Combine(newFolder, "Intro.adx")}\"");
+                        using (WaitForFile(Path.Combine(newFolder, "intro.adx"), FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
+                        foreach (var process in Process.GetProcessesByName("cmd"))
+                            process.Kill();
+                        File.Delete(file);
+                    }
+                    else if (Path.GetExtension(file) == ".adx")
+                    {
+                        File.Move(file, Path.Combine(newFolder, "intro.adx"));
+                    }
+                }
+                RunCMD($"CsbEditor.exe \"{extractedFilesPath}\"");
 
+                Thread.Sleep(1000);
+                lbl_Status.Text = "Done Repacking CSB";
+            }
         }
 
         private void ExtractAFS_DragEnter(object sender, DragEventArgs e)
