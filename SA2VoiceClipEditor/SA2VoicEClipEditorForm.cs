@@ -12,6 +12,8 @@ using PuyoTools.Modules.Archive;
 using PuyoTools.Formats.Archives;
 using System.Threading;
 using System.Diagnostics;
+using PuyoTools.GUI;
+using NAudio.Wave;
 
 namespace SA2VoiceClipEditor
 {
@@ -89,15 +91,45 @@ namespace SA2VoiceClipEditor
             }
         }
 
-        private void Rename_Files_Click(object sender, EventArgs e)
-        {
-            foreach (var process in Process.GetProcessesByName("cmd"))
-                process.Kill();
-        }
-
         private void RepackAFS_DragDrop(object sender, DragEventArgs e)
         {
-
+            var data = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            afsPath = data[0];
+            if (Directory.Exists(afsPath))
+            {
+                //Move wav/ahx files to temp dir
+                string tempPath = Path.Combine(Path.GetDirectoryName(afsPath), Path.GetFileName(afsPath) + "_new");
+                Directory.CreateDirectory(tempPath);
+                foreach (var file in Directory.GetFiles(afsPath, "*", SearchOption.AllDirectories))
+                    File.Copy(file, Path.Combine(tempPath, Path.GetFileName(file)));
+                //For each file in temp dir...
+                foreach (var file in Directory.GetFiles(tempPath))
+                {
+                    //Convert WAV files to extensionless AHX
+                    if (Path.GetExtension(file) == ".wav")
+                    {
+                        //Convert Stereo to Mono
+                        StereoToMono(file, Path.Combine(Path.GetDirectoryName(file), "mono.wav"));
+                        File.Delete(file);
+                        RunCMD($"radx_encode.exe -a \"{Path.Combine(Path.GetDirectoryName(file), "mono.wav")}\" \"{file.Replace(".wav", "")}\"");
+                        using (WaitForFile(file.Replace(".ahx", ""), FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
+                        foreach (var process in Process.GetProcessesByName("cmd"))
+                            process.Kill();
+                        File.Delete(file);
+                    }
+                    else if (Path.GetExtension(file) == ".ahx")
+                    {
+                        File.Move(file, file.Replace(".ahx", ""));
+                        using (WaitForFile(file.Replace(".ahx", ""), FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { };
+                    }
+                    else if (Path.GetExtension(file).Contains("."))
+                        File.Delete(file);
+                }
+                //Repack AFS
+                List<string> files = Directory.GetFiles(tempPath).ToList();
+                PuyoTools.GUI.ArchiveCreator.Run(files);
+            }
+            
         }
 
         private void ExtractCSB_DragDrop(object sender, DragEventArgs e)
@@ -195,5 +227,19 @@ namespace SA2VoiceClipEditor
 
             return null;
         }
+
+        public static void StereoToMono(string sourceFile, string outputFile)
+        {
+            using (var waveFileReader = new WaveFileReader(sourceFile))
+            {
+                var outFormat = new WaveFormat(waveFileReader.WaveFormat.SampleRate, 1);
+                using (var resampler = new MediaFoundationResampler(waveFileReader, outFormat))
+                {
+                    WaveFileWriter.CreateWaveFile(outputFile, resampler);
+                }
+            }
+        }
+
+
     }
 }
