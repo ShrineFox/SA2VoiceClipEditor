@@ -1,5 +1,5 @@
 # SA2VoiceClipEditor
-''SA2VoiceClipEditor'' is a simple GUI that helps automate replacing SA2PC voice clips.
+**SA2VoiceClipEditor** is a simple GUI that helps automate replacing SA2PC voice clips.
 
 ![](https://i.imgur.com/bA1TFR6.png)
 
@@ -12,7 +12,10 @@
 2. Drag a folder containing .WAV/.ADX files onto the "Repack CSB" button. WAV files will be auto-converted to non-looping .ADX.
 
 # Credits
-''SA2VoiceClipEditor'' relies on the following:
+**SA2VoiceClipEditor** relies on the following:
 - [PuyoTools](https://github.com/nickworonekin/puyotools) by nickworonekin (AFS Extraction/Creation)
 - [radx](https://github.com/Isaac-Lozano/radx) by Isaac-Lozano (ADX/AHX/WAV Conversion)
 - [SonicAudioTools](https://github.com/blueskythlikesclouds/SonicAudioTools) by blueskythlikesclouds (CSB Extraction/Creation)
+
+## License
+As the project depends on Puyo Tools, which is licensed under the [MIT license](LICENSE.md), so is SA2VoiceClipsEditor.
